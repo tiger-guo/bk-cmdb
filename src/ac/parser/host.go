@@ -429,9 +429,15 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 
+		biz, err := ps.RequestCtx.getBizFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: biz,
 				Basic: meta.Basic{
 					Type:   meta.UserCustom,
 					Action: meta.Create,
@@ -439,7 +445,7 @@ func (ps *parseStream) userCustom() *parseStream {
 				},
 			},
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: biz,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
@@ -527,9 +533,15 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
+		biz, err := ps.RequestCtx.getBizFromBody()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
-				BusinessID: ps.RequestCtx.BizID,
+				BusinessID: biz,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,

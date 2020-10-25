@@ -13,8 +13,11 @@
 package parser
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -25,7 +28,6 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
-	"github.com/tidwall/gjson"
 )
 
 func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAttribute, error) {
@@ -33,8 +35,6 @@ func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAt
 	if err != nil {
 		return nil, err
 	}
-
-	bizID := gjson.GetBytes(body, common.BKAppIDField).Int()
 
 	elements, err := urlParse(req.Request.URL.Path)
 	if err != nil {
@@ -48,7 +48,15 @@ func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAt
 		URI:      req.Request.URL.Path,
 		Elements: elements,
 		Body:     body,
-		BizID:    bizID,
+		GetBody: func() (body []byte, err error) {
+			buf := &bytes.Buffer{}
+			body, err = ioutil.ReadAll(io.TeeReader(req.Request.Body, buf))
+			if err != nil {
+				return
+			}
+			req.Request.Body = util.NewCloserWrapper(buf, req.Request.Body.Close)
+			return
+		},
 	}
 
 	stream, err := newParseStream(requestContext, engine)

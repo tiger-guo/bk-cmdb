@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"net/http"
 	"regexp"
 
@@ -30,6 +31,28 @@ type RequestContext struct {
 	Body []byte
 	// BizID is business ID
 	BizID int64
+
+	GetBody func() (body []byte, err error)
+}
+
+func (req *RequestContext) getValueFromRequestBody(key string) (value gjson.Result, err error) {
+	body, err := req.GetBody()
+	if err != nil {
+		return
+	}
+
+	value = gjson.GetBytes(body, key)
+	return
+}
+
+func (req *RequestContext) getBizFromBody() (biz int64, err error) {
+	body, err := req.GetBody()
+	if err != nil {
+		return
+	}
+
+	biz = gjson.GetBytes(body, common.BKAppIDField).Int()
+	return
 }
 
 type parseStream struct {

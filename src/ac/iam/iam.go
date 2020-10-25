@@ -102,7 +102,7 @@ func (i Iam) RegisterSystem(ctx context.Context, host string) error {
 			return err
 		}
 		if systemResp.Data.BaseInfo.ProviderConfig == nil {
-			blog.V(5).Infof("update system host to %s succeed", systemResp.Data.BaseInfo.ProviderConfig.Host, host)
+			blog.V(5).Infof("update system host to %s succeed", host)
 		} else {
 			blog.V(5).Infof("update system host %s to %s succeed", systemResp.Data.BaseInfo.ProviderConfig.Host, host)
 		}

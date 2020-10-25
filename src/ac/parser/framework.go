@@ -17,12 +17,13 @@ import (
 	"regexp"
 
 	"configcenter/src/ac/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 )
 
 type InstanceIDGetter func(request *RequestContext, re *regexp.Regexp) ([]int64, error)
-type BizIDGetter func(request *RequestContext, config AuthConfig) (bizID int64, err error)
+type BizIDGetter func(request *RequestContext) (bizID int64, err error)
 
 type AuthConfig struct {
 	Name             string
@@ -49,14 +50,14 @@ func (config *AuthConfig) Match(request *RequestContext) bool {
 
 func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestContext) ([]meta.ResourceAttribute, error) {
 	for _, item := range authConfigs {
-		if item.Match(request) == false {
+		if !item.Match(request) {
 			continue
 		}
 
 		var bizID int64
 		var err error
 		if item.BizIDGetter != nil {
-			bizID, err = item.BizIDGetter(request, item)
+			bizID, err = item.BizIDGetter(request)
 			if err != nil {
 				blog.Warnf("get business id failed, name: %s, err: %v, rid: %s", item.Name, err, request.Rid)
 				return nil, err
@@ -96,8 +97,13 @@ func MatchAndGenerateIAMResource(authConfigs []AuthConfig, request *RequestConte
 	return nil, nil
 }
 
-func DefaultBizIDGetter(request *RequestContext, config AuthConfig) (bizID int64, err error) {
-	return request.BizID, nil
+func DefaultBizIDGetter(request *RequestContext) (bizID int64, err error) {
+	value, err := request.getValueFromRequestBody(common.BKAppIDField)
+	if err != nil {
+		return
+	}
+	bizID = value.Int()
+	return
 }
 
 var (
